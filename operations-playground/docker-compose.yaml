@@ -27,11 +27,17 @@ services:
       - kafka
     volumes:
       - ./conf:/opt/flink/conf
+      - /code:/code
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
   clickevent-generator:
     image: apache/flink-ops-playground:2-FLINK-1.9-scala_2.11
     command: "java -classpath /opt/ClickCountJob.jar:/opt/flink/lib/* org.apache.flink.playgrounds.ops.clickcount.ClickEventGenerator --bootstrap.servers kafka:9092 --topic input"
+    logging:
+      driver: json-file
+      options:
+        max-size: "200k"
+        max-file: "10"
     depends_on:
       - kafka
   jobmanager:
@@ -56,12 +62,17 @@ services:
       - /tmp/flink-savepoints-directory:/tmp/flink-savepoints-directory
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    logging:
+      driver: json-file
+      options:
+        max-size: "200k"
+        max-file: "10"
   zookeeper:
     image: wurstmeister/zookeeper:3.4.6
   kafka:
     image: wurstmeister/kafka:2.12-2.2.1
     environment:
-      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://192.168.56.101:9094
       KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
@@ -69,5 +80,23 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
     ports:
       - 9094:9094
+  presto:
+    image: skame/presto
+    ports:
+      - 8080:8080
+    volumes:
+      - /root/presto/etc:/opt/presto/etc
+  kudu-master:
+    image: kunickiaj/kudu
+    command: "master"
+    ports:
+      - 8051:8051
+  kudu-tserver:
+    image: kunickiaj/kudu
+    command: "tserver"
+    environment:
+      KUDU_MASTER: kudu-master
+    ports:
+      - 8050:8050
 volumes:
   flink-checkpoints-directory:
