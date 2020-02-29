@@ -98,7 +98,7 @@ public class SimpleSinkKudu {
 				params.get("masterAddress"),
 				new MyTableSerializationSchema("input2"),
 				KuduMapper.Mode.UPSERT,
-				new JsonKuduTableRowConverter(), false, properties);
+				new MyJsonKuduTableRowConverter(), false, properties);
 
 		clicks
 				.map(s -> s)
