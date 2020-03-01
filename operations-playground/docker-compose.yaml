@@ -90,6 +90,7 @@ services:
     image: kunickiaj/kudu
     command: "master"
     ports:
+      - 7051:7051
       - 8051:8051
   kudu-tserver:
     image: kunickiaj/kudu
@@ -98,5 +99,23 @@ services:
       KUDU_MASTER: kudu-master
     ports:
       - 8050:8050
+  openvpn:
+    cap_add:
+     - NET_ADMIN
+    image: kylemanna/openvpn
+    container_name: openvpn
+    ports:
+     - "1194:1194/udp"
+    restart: always
+    volumes:
+     - ./openvpn-data/conf:/etc/openvpn
+  dns-proxy:
+    image: instantlinux/udp-nginx-proxy
+    container_name: dns-proxy
+    ports:
+     - "53:53/udp"
+    restart: always
+    environment:
+      BACKENDS: 127.0.0.11
 volumes:
   flink-checkpoints-directory:
